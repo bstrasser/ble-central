@@ -9,10 +9,10 @@
 #include <AltSoftSerial.h>
 AltSoftSerial Serial1;
 #endif
+ uint16_t event;
+  uint8_t *buf;
 
-
-uint8_t found_address[6] = {
-  215, 220, 96, 128, 7 , 0};
+uint8_t found_address[6] = {215, 220, 96, 128, 7 , 0};
 //uint8_t found_address[6] = {6, 113, 103, 128, 7 , 0};
 
 static uint8_t found_address1[1000];
@@ -42,43 +42,37 @@ byte ble_event_available()
 byte ble_event_process()
 {
   uint8_t type, event_code, data_len, status1;
-  uint16_t event;
-  uint8_t buf[64];
-
+  
   type = Serial1.read();
   delay(35);
   event_code = Serial1.read();
   data_len = Serial1.read();
-
-  // p("-----------------------------\r\n");
-  //  p("-Type        : 0x%02X\r\n", type);
-  //  p("-EventCode   : 0x%02X\r\n", event_code);
-  //  p("-Data Length : 0x%02X\r\n", data_len);
+  
+  buf=(uint8_t *)malloc(64*sizeof(uint8_t));
 
   for (int i = 0; i < data_len; i++)
     buf[i] = Serial1.read();
 
   event = BUILD_UINT16(buf[0], buf[1]);
   status1 = buf[2];
-
   p(" Event       : 0x%04X\r\n", event);
   p(" Status      : 0x%02X\r\n", status1);
 
   switch (event)
   {
-  case 0x060D: // GAP_DeviceDiscoveryDone
+  case 0x060D: // GAP_DeviceDiscovery
     {
       p("GAP_DeviceDiscovery\r\n");
 
-      uint8_t num_devs = buf[3];
-      //p(" NumDevs     : 0x%02X\r\n", num_devs);
-      int rssi = (int) buf[11];
+     int rssi = (int) buf[11];
       //rssi = -93 - rssi + 256;
       rssi = rssi - 262;
       if(rssi >= -75){
-        // rssia[addcount] =  buf[11]; 
-        memcpy(&rssia[addcount], &buf[11], 1);
-        Serial.print("yes");
+        Serial.println(addcount);
+        uint8_t temprssi = buf[11];
+    
+        rssia[addcount] = temprssi;
+        p("0x%02X", rssia[addcount]);
         int temppp = addcount*6;
         memcpy(&found_address1[temppp], &buf[5], 6);
         addcount++;
@@ -127,55 +121,9 @@ byte ble_event_process()
     break;  
 
   }  
+  free(buf);
 }
-//byte ble_event_process1()
-//{
-//  uint8_t type, event_code, data_len, status1;
-//  uint16_t event;
-//  uint8_t buf[64];
-//  
-//  type = Serial1.read();
-//  delay(35);
-//  event_code = Serial1.read();
-//  data_len = Serial1.read();
-//  
-//  p("-----------------------------\r\n");
-//  p("-Type        : 0x%02X\r\n", type);
-//  p("-EventCode   : 0x%02X\r\n", event_code);
-//  p("-Data Length : 0x%02X\r\n", data_len);
-//  
-//  for (int i = 0; i < data_len; i++)
-//    buf[i] = Serial1.read();
-//    
-//  event = BUILD_UINT16(buf[0], buf[1]);
-//  status1 = buf[2];
-//  
-//  p(" Event       : 0x%04X\r\n", event);
-//  p(" Status      : 0x%02X\r\n", status1);
-//
-//  switch (event)
-//  {
-//      case 0x0605:
-//      {
-//          p("EstablishLink Event\r\n");
-//          p(" Status      : 0x%02X\r\n", status1);
-//
-//      
-//      }
-//      break;  
-//      case 0x067F:
-//      {
-//            p("EstablishLink Event Failed\r\n");
-//          p(" Status      : 0x%02X\r\n", status1);
-//
-//      }
-//      break;
-//      default:
-//      p(" -> Not handled yet.\r\n");
-// 
-//  }
-// 
-//} 
+ 
 void setup()
 { 
 #if defined(__AVR_ATmega328P__)
@@ -192,38 +140,22 @@ void setup()
 #endif
 
   biscuit_central_init();
-  wdt_enable (WDTO_8S);
-  // Serial1.setDTR(false);
-  // Serial.setDTR(false);
 }
 
 void loop()
 {
-  Serial.println("main loop");
-
-  while (ble_event_available())
+ Serial.println("main loop");
+ 
+   while (Serial.available())
   {  
-    ble_event_process();
-    wdt_reset ();
-  }
-  while (ble_event_available())
-  {  
-    ble_event_process();
-    wdt_reset ();
-  }
-  while (ble_event_available())
-  {  
-    ble_event_process();
-    wdt_reset ();
-  }
-
-
+    byte cmd = Serial.read();
+ 
   while(1){
     while (ble_event_available())
     {      
       ble_event_process();
       delay(50);
-      wdt_reset ();
+      
     }
     Serial.println("main");
     addcount = 0;
@@ -233,70 +165,52 @@ void loop()
       while (ble_event_available())
       {
         ble_event_process();
-        wdt_reset ();
       }
-      wdt_reset ();
       biscuit_central_start_discovery();
-      wdt_reset ();
+    
       delay(500);
-      wdt_reset ();
-      while(ble_event_available())
-      {
-        
-        ble_event_process();
-        delay(50); 
-        wdt_reset ();
-      }
-      wdt_reset ();
-      delay(500);
-      wdt_reset ();
+    
       while(ble_event_available())
       {
         ble_event_process();
         delay(50); 
-        wdt_reset ();
       }
-      wdt_reset ();
       delay(500);
-      wdt_reset ();
+    
+      while(ble_event_available())
+      {
+        ble_event_process();
+        delay(50);       
+      }
+      delay(500);
       while(ble_event_available())
       {
         ble_event_process();
         delay(50); 
-        wdt_reset ();
       }
-      wdt_reset ();
       biscuit_central_end_discovery();
-      wdt_reset ();
+    
       Serial.print(addcount);
     }
-    wdt_reset ();
     delay(1000);
-    wdt_reset ();
+  
     while(ble_event_available())
     {
-      ble_event_process();
-      wdt_reset ();
+      ble_event_process();  
     }
     p(" -> Send data to the Biscuit peripheral...\r\n");
     Serial.print("freeMemory()=");
     Serial.println(freeMemory());
     while(connectedd==0){
-      wdt_reset ();
       biscuit_central_connect(found_address);
-       delay(1000);
-      wdt_reset ();
+       delay(2000);
       while(ble_event_available())
       {
         ble_event_process();
-        wdt_reset ();
       }
-      wdt_reset ();
       delay(2000);
-      wdt_reset ();
     }
     for(int a = 0; a < addcount; a++){
-      wdt_reset ();
       uint8 *temp1;
 
       char temp[10];
@@ -311,34 +225,30 @@ void loop()
       temp[7] = 0x01;
       temp[8] = 0x0A;
       temp[9] = 0x0A;
-      wdt_reset ();
       biscuit_central_write_bytes((uint8 *) &temp, 10);
       delay(300);
     }
+    addcount = 0;
     delay(200);
     while (ble_event_available())
     {  
       ble_event_process();
       delay(50);
-      wdt_reset ();
     }
 
     while(connectedd==1){
-      wdt_reset ();
       biscuit_central_disconnect();
-      delay(1000);
-      wdt_reset ();
+      delay(2000);
       while (ble_event_available())
       {  
         ble_event_process();
-        wdt_reset ();
       }
-      wdt_reset ();
       delay(2000);
-      wdt_reset ();
+      
 
     }
 
+  }
   }
 }
 
