@@ -146,9 +146,9 @@ void loop()
 {
  Serial.println("main loop");
  
-   while (Serial.available())
-  {  
-    byte cmd = Serial.read();
+//   while (Serial.available())
+//  {  
+//    byte cmd = Serial.read();
  
   while(1){
     while (ble_event_available())
@@ -159,7 +159,7 @@ void loop()
     }
     Serial.println("main");
     addcount = 0;
-    for(int m = 0; m < 10; m++){
+    for(int m = 0; m < 14; m++){
       p(" -> Start discovery...\r\n");
       scanning = 1;
       while (ble_event_available())
@@ -168,21 +168,41 @@ void loop()
       }
       biscuit_central_start_discovery();
     
-      delay(500);
+      delay(300);
     
       while(ble_event_available())
       {
         ble_event_process();
         delay(50); 
       }
-      delay(500);
-    
+      while(ble_event_available())
+      {
+        ble_event_process();
+        delay(50); 
+      }
+      delay(300);
+      while(ble_event_available())
+      {
+        ble_event_process();
+        delay(50); 
+      }    
       while(ble_event_available())
       {
         ble_event_process();
         delay(50);       
       }
-      delay(500);
+      delay(300);
+      while(ble_event_available())
+      {
+        ble_event_process();
+        delay(50); 
+      }
+      while(ble_event_available())
+      {
+        ble_event_process();
+        delay(50); 
+      }
+      delay(300);
       while(ble_event_available())
       {
         ble_event_process();
@@ -201,6 +221,7 @@ void loop()
     p(" -> Send data to the Biscuit peripheral...\r\n");
     Serial.print("freeMemory()=");
     Serial.println(freeMemory());
+    int failcount = 0;
     while(connectedd==0){
       biscuit_central_connect(found_address);
        delay(2000);
@@ -209,6 +230,14 @@ void loop()
         ble_event_process();
       }
       delay(2000);
+      while(ble_event_available())
+      {
+        ble_event_process();
+      }
+      if(failcount >= 20)
+        break;
+        
+      failcount++;  
     }
     for(int a = 0; a < addcount; a++){
       uint8 *temp1;
@@ -235,7 +264,7 @@ void loop()
       ble_event_process();
       delay(50);
     }
-
+    failcount = 0;
     while(connectedd==1){
       biscuit_central_disconnect();
       delay(2000);
@@ -244,12 +273,18 @@ void loop()
         ble_event_process();
       }
       delay(2000);
-      
-
+      while(ble_event_available())
+      {
+        ble_event_process();
+      }
+      if(failcount >= 20)
+        break;
+        
+      failcount++;
     }
 
   }
-  }
+//  }
 }
 
 
