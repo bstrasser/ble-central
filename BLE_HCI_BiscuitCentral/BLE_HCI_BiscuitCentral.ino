@@ -11,8 +11,8 @@ AltSoftSerial Serial1;
 #endif
  uint16_t event;
   uint8_t *buf;
-
-uint8_t found_address[6] = {215, 220, 96, 128, 7 , 0};
+//change the address to connect to different server
+uint8_t found_address[6] = {255, 247, 73, 41, 106 , 188};
 //uint8_t found_address[6] = {6, 113, 103, 128, 7 , 0};
 
 static uint8_t found_address1[1000];

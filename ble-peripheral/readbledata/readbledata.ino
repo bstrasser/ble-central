@@ -8,7 +8,7 @@ int counter = 0;
 void setup()  
 {
   // set the data rate for the SoftwareSerial port
-  bleShield.begin(19200);
+  bleShield.begin(19200);          
   Serial.begin(19200);
   randomSeed(analogRead(0));  
 }
